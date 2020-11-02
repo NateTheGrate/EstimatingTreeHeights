@@ -1,6 +1,8 @@
 # EstimatingTreeHeights
 Senior capstone project from estimating the heights of trees from time-series photos.
 
+Documentation is in Wiki.
+
 (Description taken from here: https://eecs.oregonstate.edu/capstone/submission/pages/viewSingleProject.php?id=GYImVHKbikjqTF4a)
 
 
