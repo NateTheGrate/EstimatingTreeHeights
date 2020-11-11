@@ -1,3 +1,15 @@
+# HOW TO USE
+env is in the gitignore so we don't clutter up the repo with packages. 
+
+To install the dependencies just run ```pip install -r requirements.txt ```
+
+If running in linux, to start the env run ```source env/bin/activate``` and ```deactivate``` to stop it.
+
+If running this on an IDE or vscode or something, make sure to point whatever runs python to env/bin/python3.
+
+If you want to add dependencies and such with ```pip install <packagename>```, be sure to run ```pip freeze > requirements.txt``` (in some terminal that uses bash) to update the requirements.
+
+
 # EstimatingTreeHeights
 Senior capstone project from estimating the heights of trees from time-series photos.
 
