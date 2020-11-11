@@ -1,7 +1,7 @@
 # HOW TO USE
 env is in the gitignore so we don't clutter up the repo with packages. 
 
-To install the dependencies just run ```pip install -r requirements.txt ```
+To install the dependencies just run ```pip install -r requirements.txt ``` or pip3, I don't think it matters that much.
 
 If running in linux, to start the env run ```source env/bin/activate``` and ```deactivate``` to stop it.
 
