@@ -1,10 +1,10 @@
-import glob
 from PIL import Image
 
 CROPSIZE = 12 # cropsize = x produces 12x12 cropped images
+
 im = Image.open("./images/full_images/test.tif")
 
-width, height = 1000,1000#im.size
+width, height = 240,240 #im.size
 k = 0
 # rows
 for i in range(0, width - CROPSIZE, CROPSIZE):
