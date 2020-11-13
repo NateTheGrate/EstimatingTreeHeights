@@ -4,8 +4,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-#ignore vscode files
+#ignore vscode files and idea files
 .vscode/
+.idea/
 
 #ignore images
 images/
