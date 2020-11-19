@@ -7,9 +7,9 @@ from PIL import Image
 
 # credit to this git repo: https://github.com/utkuozbulak/pytorch-custom-dataset-examples
 class ImageDataset(Dataset):
-    def __init__(self, csv_path):
+    def __init__(self, csv_path, transform):
         # Transforms
-        self.to_tensor = transforms.ToTensor()
+        self.to_tensor = transform
         # Read the csv file
         self.data_info = pd.read_csv(csv_path, header=None)
         # First column contains the image paths

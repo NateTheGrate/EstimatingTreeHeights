@@ -4,10 +4,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-#ignore vscode files, data, and idea files
+#ignore vscode files, data, and idea files, etc...
 .vscode/
 .idea/
-data/
+data/images/cropped_test/*
+data/images/cropped_train/*
+
+#keep folder structure in repo
+!data/images/cropped_test/.gitkeep
+!data/images/cropped_train/.gitkeep
 
 #ignore images
 images/
