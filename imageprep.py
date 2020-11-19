@@ -9,7 +9,7 @@ k = 0
 # rows
 for i in range(0, width - CROPSIZE, CROPSIZE):
     # columns
-    for j in range(0, height - CROPSIZE, CROPSIZE):
+    for j in range(20, height - CROPSIZE, CROPSIZE):
         # crop image with square of (i,j), (i+cropsize, j+cropsize)
         cropped = im.crop((i, j, i+CROPSIZE, j+CROPSIZE))
         # cropped images have format (y, x)
