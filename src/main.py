@@ -31,8 +31,8 @@ if __name__ == "__main__":
     custom_mnist_from_csv_data = csv_dataset.ImageDataset(TRAIN_CSV, transform) 
 
     mn_dataset_loader = torch.utils.data.DataLoader(dataset=custom_mnist_from_csv_data,
-                                                    batch_size=3,
-                                                    shuffle=False)
+                                                    batch_size=4,
+                                                    shuffle=True)
 
     # Read image data from Csv
     testset = csv_dataset.ImageDataset(TEST_CSV, transform) 
@@ -41,10 +41,11 @@ if __name__ == "__main__":
                                                     shuffle=False)
 
 
-    NUMBER_OF_EPOCHS = 25
-    LEARNING_RATE = 1e-1
+    NUMBER_OF_EPOCHS = 50
+    LEARNING_RATE = 0.1
 
     model = MnistCNNModel()
+    model.train(True)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
     for epoch in range(NUMBER_OF_EPOCHS):
@@ -64,52 +65,49 @@ if __name__ == "__main__":
             # Update weights
             optimizer.step()
             
-
+    model.eval()
     correct = 0
     total = 0
     # test model
-    for data in testloader:
-        images, labels = data
+    for i, (images, labels) in enumerate(testloader):
         outputs = model(Variable(images))
-        _, predicted = torch.max(outputs.data, 1)
+        _,predicted = torch.max(outputs.data, 1)
+        
+        print(predicted)
         total += labels.size(0)
         correct += (predicted == labels).sum()
-        print(predicted)
+        
     
 
-    f, axarr = plt.subplots(nrows=1,ncols=4, figsize=(12,4))
+    f, axarr = plt.subplots(nrows=1,ncols=8, figsize=(20,4))
     
     for i, (images, labels) in enumerate(testloader):
         # get data from model about image
         outputs = model(Variable(images))
         _, predicted = torch.max(outputs.data, 1)
+    
+        prd = ""
+        if(predicted == torch.Tensor([1])):
+            prd = "True"
+        else:
+            prd = "false"
+
+        lbl = ""
+        if(labels == torch.Tensor([1])):
+            lbl = "true"
+        else:
+            lbl = "false"
+
+        img = (torchvision.utils.make_grid(images))
+        img = img / 2 + 0.5
+        npimg = img.numpy()
+
+        plt.sca(axarr[i])
+        plt.imshow(np.transpose(npimg, (1, 2, 0)))
+
         
-        if(i >= 3):
-            prd = ""
-            if(predicted == torch.tensor([1])):
-                prd = "True"
-            else:
-                prd = "false"
-
-            lbl = ""
-            if(labels == torch.tensor([1])):
-                lbl = "true"
-            else:
-                lbl = "false"
-
-            img = (torchvision.utils.make_grid(images))
-            img = img / 2 + 0.5
-            npimg = img.numpy()
-
-            plt.sca(axarr[i-3])
-            plt.imshow(np.transpose(npimg, (1, 2, 0)))
-
-            
-            plt.title("Predicted: " + prd + "\nActual: " + lbl)
-            plt.axis('off')
-
-        if(i >= 6):
-            break
+        plt.title("Predicted: " + prd + "\nActual: " + lbl)
+        plt.axis('off')
 
     plt.savefig("./data/figures/graph.png")
 
