@@ -12,8 +12,8 @@ class MnistCNNModel(nn.Module):
         #self.relu1 = nn.Sigmoid()
         #self.maxpool1 = nn.MaxPool2d(kernel_size=4)
         #self.fc1 = nn.Linear(576, 10)
-        self.fc1 = nn.Linear(12 * 12 * 3, 6)
-        self.fc2 = nn.Linear(6,2)
+        self.fc1 = nn.Linear(2,2)
+        self.fc2 = nn.Linear(2,1)
 
 
     def forward(self, x):
@@ -22,7 +22,7 @@ class MnistCNNModel(nn.Module):
         #out = self.relu1(out)
         #out = self.maxpool1(out)
         #out = out.view(out.size(0), -1)
-        out = x.view(-1,12*12*3)
+        out = x.view(-1,2)
         out = self.fc1(out)
         out = self.relu1(out)
         out = self.fc2(out)

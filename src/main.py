@@ -16,7 +16,7 @@ from cnn_model import MnistCNNModel
 import csv_dataset
 
 
-TRAIN_CSV = "./data/csv/testcsv.csv"
+TRAIN_CSV = "./data/csv/test.csv"
 TEST_CSV = "./data/csv/testcsvtester.csv"
 
 if __name__ == "__main__":
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     transform = transforms.Compose(
         [
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
 
     # Read image data from Csv 
@@ -73,44 +73,11 @@ if __name__ == "__main__":
         outputs = model(Variable(images))
         _,predicted = torch.max(outputs.data, 1)
         
-        print(predicted)
         total += labels.size(0)
         correct += (predicted == labels).sum()
+
+    print("correct: ", correct, "% correct", correct/total)
         
     
 
-    f, axarr = plt.subplots(nrows=1,ncols=8, figsize=(20,4))
-    
-    for i, (images, labels) in enumerate(testloader):
-        # get data from model about image
-        outputs = model(Variable(images))
-        _, predicted = torch.max(outputs.data, 1)
-    
-        prd = ""
-        if(predicted == torch.Tensor([1])):
-            prd = "True"
-        else:
-            prd = "false"
-
-        lbl = ""
-        if(labels == torch.Tensor([1])):
-            lbl = "true"
-        else:
-            lbl = "false"
-
-        img = (torchvision.utils.make_grid(images))
-        img = img / 2 + 0.5
-        npimg = img.numpy()
-
-        plt.sca(axarr[i])
-        plt.imshow(np.transpose(npimg, (1, 2, 0)))
-
-        
-        plt.title("Predicted: " + prd + "\nActual: " + lbl)
-        plt.axis('off')
-
-    plt.savefig("./data/figures/graph.png")
-
-    print('Accuracy of the network on the 10000 test images: %d %%' % (100 * correct / total))
-
-    
+   
