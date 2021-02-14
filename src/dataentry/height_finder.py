@@ -1,5 +1,3 @@
-# (x,y), canopy_size, tree_height (dogami)
-
 import pandas as pd
 import numpy as np
 from PIL import Image
@@ -7,14 +5,18 @@ from PIL import Image
 DTM_MIN, DTM_MAX = 2651, 3413.2
 DSM_MIN, DSM_MAX = 2651.71, 3445.11
 
+DSM_IMG = './data/images/dsm2010.png'
+DTM_IMG = './data/images/dtm2010.png'
+HEIGHT_CSV = './data/csv/test.csv'
 
-im = Image.open('./data/images/dsm2010.png').convert('L')
+
+im = Image.open(DSM_IMG).convert('L')
 dsmarray = np.array(im)
 
-im2 = Image.open('./data/images/dtm2010.png').convert('L')
+im2 = Image.open(DTM_IMG).convert('L')
 dtmarray = np.array(im2)
 
-# dsm height is absolute surface height (tree height) (in feet)
+# dsm height is absolute surface height (tree height from sea level) (in feet)
 def pixelValToDSMHeight(pixelValue):
     return pixelValue + ((DSM_MAX - DSM_MIN) / 255) + DSM_MIN
 
@@ -22,8 +24,16 @@ def pixelValToDSMHeight(pixelValue):
 def pixelValToDTMHeight(pixelValue):
     return pixelValue + ((DTM_MAX - DTM_MIN) / 255) + DTM_MIN
 
+# read csv data
+data = pd.read_csv(HEIGHT_CSV)
 
-data = pd.read_csv('./data/csv/test.csv')
-x,y = np.asarray(data.iloc[0,:2])
-height =  pixelValToDSMHeight(dsmarray[y][x]) - pixelValToDTMHeight(dtmarray[y][x])
-print(height)
+for i in range(0, data.shape[0]):
+    # get coords from csv (first 2 columns)
+    x,y = np.asarray(data.iloc[i,:2])
+
+    height =  pixelValToDSMHeight(dsmarray[y][x]) - pixelValToDTMHeight(dtmarray[y][x])
+
+    data.iloc[i][3] = height
+
+data.to_csv(HEIGHT_CSV, index=False)
+
