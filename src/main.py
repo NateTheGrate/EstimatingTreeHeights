@@ -17,7 +17,7 @@ import csv_dataset
 
 
 TRAIN_CSV = "./data/csv/test.csv"
-TEST_CSV = "./data/csv/testcsvtester.csv"
+TEST_CSV = "./data/csv/test.csv"
 
 if __name__ == "__main__":
 
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     custom_mnist_from_csv_data = csv_dataset.ImageDataset(TRAIN_CSV, transform) 
 
     mn_dataset_loader = torch.utils.data.DataLoader(dataset=custom_mnist_from_csv_data,
-                                                    batch_size=4,
+                                                    batch_size=1,
                                                     shuffle=True)
 
     # Read image data from Csv
@@ -46,14 +46,14 @@ if __name__ == "__main__":
 
     model = MnistCNNModel()
     model.train(True)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.BCELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
     for epoch in range(NUMBER_OF_EPOCHS):
         trainloader_iter = iter(mn_dataset_loader)
         for batch_idx, (images, labels) in enumerate(trainloader_iter):
-            images = Variable(images)
+            images = Variable(images).float()
             labels = Variable(labels)
-            
+            labels = labels.unsqueeze(1).float()
             # Clear gradients
             optimizer.zero_grad()
             # Forward pass
@@ -68,15 +68,19 @@ if __name__ == "__main__":
     model.eval()
     correct = 0
     total = 0
+    total_avg_error = 0
     # test model
     for i, (images, labels) in enumerate(testloader):
-        outputs = model(Variable(images))
+        outputs = model(Variable(images).float())
         _,predicted = torch.max(outputs.data, 1)
         
         total += labels.size(0)
         correct += (predicted == labels).sum()
+        total_avg_error += abs(predicted - labels)
 
-    print("correct: ", correct, "% correct", correct/total)
+    total_avg_error = total_avg_error/total
+
+    print(total_avg_error)
         
     
 

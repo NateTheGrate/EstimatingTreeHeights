@@ -11,13 +11,13 @@ class ImageDataset(Dataset):
         # Transforms
         self.to_tensor = transform
         # Read the csv file
-        self.data_info = pd.read_csv(csv_path, header=None)
+        self.data_info = pd.read_csv(csv_path)
 
         # First column contains the canopy sizes
-        self.size_arr = np.asarray(self.data_info.iloc[:, 1])
+        self.size_arr = np.asarray(self.data_info.loc[:, 'canopy_size'])
         
         # Second column is the labels/height
-        self.label_arr = np.asarray(self.data_info.iloc[:, 2])
+        self.label_arr = np.asarray(self.data_info.loc[:, 'height'])
 
         # Calculate len
         self.data_len = len(self.data_info.index)
