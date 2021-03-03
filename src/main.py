@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     model = MnistCNNModel()
     model.train(True)
-    criterion = nn.BCELoss()
+    criterion = nn.MSELoss() 
     optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
     for epoch in range(NUMBER_OF_EPOCHS):
         trainloader_iter = iter(mn_dataset_loader)
@@ -69,6 +69,7 @@ if __name__ == "__main__":
     correct = 0
     total = 0
     total_avg_error = 0
+    total_avg_error_p  = 0
     # test model
     for i, (images, labels) in enumerate(testloader):
         outputs = model(Variable(images).float())
@@ -76,12 +77,11 @@ if __name__ == "__main__":
         
         total += labels.size(0)
         correct += (predicted == labels).sum()
-        total_avg_error += abs(predicted - labels)
+        total_avg_error += (predicted - labels)
+        total_avg_error_p += total_avg_error/labels
+
 
     total_avg_error = total_avg_error/total
+    total_avg_error_p = total_avg_error_p/total
 
-    print(total_avg_error)
-        
-    
-
-   
+    print(total_avg_error, total_avg_error_p)
