@@ -34,7 +34,7 @@ for i in range(0, data.shape[0]):
     x = int(x)
     y = int(y)
     height =  pixelValToDSMHeight(dsmarray[y][x]) - pixelValToDTMHeight(dtmarray[y][x])
-    data.loc[i,'height'] = height
+    data.loc[i,'height'] = height * 0.1
     
 
 data.to_csv(HEIGHT_CSV, index=False, float_format='%.16g')

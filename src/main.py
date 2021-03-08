@@ -72,16 +72,19 @@ if __name__ == "__main__":
     total_avg_error_p  = 0
     # test model
     for i, (images, labels) in enumerate(testloader):
+        temp = 0
         outputs = model(Variable(images).float())
-        _,predicted = torch.max(outputs.data, 1)
-        
+        predicted = outputs * 10 #torch.max(outputs.data, 1)
+        labels *= 10
         total += labels.size(0)
-        correct += (predicted == labels).sum()
-        total_avg_error += (predicted - labels)
-        total_avg_error_p += total_avg_error/labels
+        temp += ((predicted - labels.item()))
+        total_avg_error_p += total_avg_error/temp
+        total_avg_error += abs(temp)
+        #print("Height: ", labels.item(), " Predicted height: ", predicted.item())
 
 
     total_avg_error = total_avg_error/total
     total_avg_error_p = total_avg_error_p/total
 
-    print(total_avg_error, total_avg_error_p)
+    print("Average error:", round(total_avg_error.item(),2), "feet")
+    print("Average percent error:", round(total_avg_error_p.item(),2), "%")
