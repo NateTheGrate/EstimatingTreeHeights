@@ -8,7 +8,7 @@ DSM_MIN, DSM_MAX = float(2651.71), float(3445.11)
 
 DSM_IMG = './data/images/dsm2010.png'
 DTM_IMG = './data/images/dtm2010.png'
-HEIGHT_CSV = './data/csv/test.csv'
+HEIGHT_CSV = './data/csv/canopies.csv'
 
 PIL.Image.MAX_IMAGE_PIXELS = 152463601
 
@@ -34,7 +34,7 @@ for i in range(0, data.shape[0]):
     x = int(x)
     y = int(y)
     height =  pixelValToDSMHeight(dsmarray[y][x]) - pixelValToDTMHeight(dtmarray[y][x])
-    data.loc[i,'height'] = height * 0.1
+    data.loc[i,'height'] = height
     
 
 data.to_csv(HEIGHT_CSV, index=False, float_format='%.16g')

@@ -1,35 +1,32 @@
 import pandas as pd
 import numpy as np
+import torch
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.dataset import Dataset
-from torchvision import transforms
 from PIL import Image
+from sklearn.preprocessing import MinMaxScaler
 
 # credit to this git repo: https://github.com/utkuozbulak/pytorch-custom-dataset-examples
 class ImageDataset(Dataset):
-    def __init__(self, csv_path, transform):
-        # Transforms
-        self.to_tensor = transform
+    def __init__(self, csv_path):
         # Read the csv file
         self.data_info = pd.read_csv(csv_path)
 
         # First column contains the canopy sizes
-        self.size_arr = np.asarray(self.data_info.loc[:, 'canopy_size'])
-        
+        self.size_arr = np.asarray(self.data_info.loc[:, 'area'])
+        self.size_arr = np.array(self.size_arr, dtype=np.float32)
+        self.size_arr = self.size_arr.reshape(-1,1)        
         # Second column is the labels/height
         self.label_arr = np.asarray(self.data_info.loc[:, 'height'])
-
+        self.label_arr = np.array(self.label_arr, dtype=np.float32)
+        self.label_arr = self.label_arr.reshape(-1,1)
         # Calculate len
         self.data_len = len(self.data_info.index)
 
     def __getitem__(self, index):
-        # Get image name from the pandas df
-        # Open image as rgb
-        #img_as_img = Image.open(single_image_name).convert("RGB")
-         # Transform image to tensor
+
         size = self.size_arr[index]
 
-        # Get label(class) of the image based on the cropped pandas column
         height = self.label_arr[index]
 
         return (size, height)
