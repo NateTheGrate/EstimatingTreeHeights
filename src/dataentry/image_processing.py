@@ -114,12 +114,13 @@ for c in contours:
     # Center
     cx = int(m['m10'] / m['m00'])
     cy = int(m['m01'] / m['m00'])
-    height = findHeights(dsmarray, dtmarray, cx, cy)
-
+    height = abs(findHeights(dsmarray, dtmarray, cx, cy))
+    if height < 15:
+        continue
     canopies['x'].append(cx)
     canopies['y'].append(cy)
     canopies['area'].append(cv2.contourArea(c)/100)
-    canopies['height'].append(abs(height))
+    canopies['height'].append(height)
 
 
 csv = pd.DataFrame.from_dict(canopies)
