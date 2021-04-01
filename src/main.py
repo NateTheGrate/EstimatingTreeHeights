@@ -36,9 +36,11 @@ if __name__ == "__main__":
                                                     shuffle=False)
 
 
-    NUMBER_OF_EPOCHS = 50000
+    NUMBER_OF_EPOCHS = 5000
     LEARNING_RATE = 0.0005
 
+    torch.set_num_threads(4)
+    print(torch.get_num_threads())
     model = MnistCNNModel()
     model.train()
     criterion = nn.MSELoss() 

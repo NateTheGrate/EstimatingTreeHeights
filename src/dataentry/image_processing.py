@@ -8,8 +8,33 @@ from math import sqrt
 from skimage import data
 from skimage.feature import blob_dog, blob_log, blob_doh
 from skimage.color import rgb2gray
+from PIL import Image
+import PIL
 
+IMAGE_PATH = './data/images/training/highest_hit.png'
 
+DTM_MIN, DTM_MAX = float(2651.41), float(3413.2)
+DSM_MIN, DSM_MAX = float(2651.71), float(3445.11)
+
+DSM_IMG = './data/images/training/highest_hit.png'
+DTM_IMG = './data/images/training/bare_earth.png'
+HEIGHT_CSV = './data/csv/canopies.csv'
+
+PIL.Image.MAX_IMAGE_PIXELS = 152463601
+
+# dsm height is absolute surface height (tree height from sea level) (in feet)
+def pixelValToDSMHeight(pixelValue):
+    return pixelValue + ((DSM_MAX - DSM_MIN) / 255.0) + DSM_MIN
+
+# dtm height is absolute ground height (in feet)
+def pixelValToDTMHeight(pixelValue):
+    return pixelValue + ((DTM_MAX - DTM_MIN) / 255.0) + DTM_MIN
+
+# at (x,y), subtract dsm from dtm (tree height from ground height)
+def findHeights(dsm, dtm, x, y):
+    height =  pixelValToDSMHeight(dsm[y][x]) - pixelValToDTMHeight(dtm[y][x])
+    return height
+        
 
 def rgb_hsv(r, g, b):
     red = r/255
@@ -19,7 +44,7 @@ def rgb_hsv(r, g, b):
 
 
 # Read image
-img = cv2.imread("./data/images/colorimage1.png")
+img = cv2.imread(IMAGE_PATH)
 og = img
 
 
@@ -71,6 +96,13 @@ cv2.imwrite("./temp.png",markers)
 contours = cv2.findContours(markers, cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_SIMPLE)[0]
 cv2.drawContours(markers,contours, 0, (123,255,123), 3)
 
+# now time to get dsm and dtm bitmapas
+dsm_im = Image.open(DSM_IMG).convert('L')
+dsmarray = np.array(dsm_im)
+
+dtm_im = Image.open(DTM_IMG).convert('L')
+dtmarray = np.array(dtm_im)
+
 canopies = {}
 canopies['x'] = []
 canopies['y'] = []
@@ -82,25 +114,13 @@ for c in contours:
     # Center
     cx = int(m['m10'] / m['m00'])
     cy = int(m['m01'] / m['m00'])
+    height = findHeights(dsmarray, dtmarray, cx, cy)
 
     canopies['x'].append(cx)
     canopies['y'].append(cy)
     canopies['area'].append(cv2.contourArea(c)/100)
-    canopies['height'].append(-1)
+    canopies['height'].append(abs(height))
 
-
-#print(canopies)
-#print(len(contours))
-#print(len(canopies))
-#print(len(canopies['area']))
 
 csv = pd.DataFrame.from_dict(canopies)
-csv.to_csv('./data/csv/canopies.csv', index=False)
-
-
-#fig, axs = plt.subplots (2,2)
-#axs[0,0].imshow(mcopy)
-#axs[0,1].imshow(canopyMask, cmap="gray")
-#axs[0,1].imshow(markers)
-#axs[1,0].imshow(og)
-#plt.show()
+csv.to_csv(HEIGHT_CSV, index=False, float_format='%.16g')
