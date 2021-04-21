@@ -1,20 +1,15 @@
 from cv2 import cv2
-from matplotlib import pyplot as plt
-from matplotlib.colors import rgb_to_hsv
 import numpy as np
+from matplotlib import pyplot as plt
 import pandas as pd
-from skimage.segmentation import watershed
-from math import sqrt
-from skimage import data
-from skimage.feature import blob_dog, blob_log, blob_doh
-from skimage.color import rgb2gray
+import datetime
 from PIL import Image
 import PIL
 
 IMAGE_PATH = './data/images/training/highest_hit.png'
 
-DTM_MIN, DTM_MAX = float(2651.41), float(3413.2)
-DSM_MIN, DSM_MAX = float(2651.71), float(3445.11)
+DTM_MIN, DTM_MAX = float(3361.916504), float(3621.498291)
+DSM_MIN, DSM_MAX = float(3362.287598), float(3627.270752)
 
 DSM_IMG = './data/images/training/highest_hit.png'
 DTM_IMG = './data/images/training/bare_earth.png'
@@ -34,67 +29,59 @@ def pixelValToDTMHeight(pixelValue):
 def findHeights(dsm, dtm, x, y):
     height =  pixelValToDSMHeight(dsm[y][x]) - pixelValToDTMHeight(dtm[y][x])
     return height
-        
-
-def rgb_hsv(r, g, b):
-    red = r/255
-    green = r/255
-    blue = r/255
-    return rgb_to_hsv([red, green, blue])
-
-
-# Read image
 img = cv2.imread(IMAGE_PATH)
-og = img
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+imgy = len(img)
+imgx = len(img[0])
+print("Reading image with width " + str(imgx) + " and height " + str(imgy) + ".")
+time1 = datetime.datetime.now().replace(microsecond=0)
+
+# Display in-process images
+debug = True
+# Average tree areas in pixels, the program checks that all contours are not too far away from this
+AVG_TREE_AREA = 2500
+# Grayscale colors used to display different parts of the image during processing
+COLOR_BLACK = 1
+COLOR_GRAY = 200
+# Thresholds used to control the sensitivity of the edge finding, not currently very algorithm-important
+CANNY_THRESH_LOW = 30
+CANNY_THRESH_HIGH = 40
+
+# Highlight harder to find tree edges by comparing neighboring color values in the height map
+# This currently doesn't help much with contouring, but helps with visualization and error estimation
+for i in range(imgy-2):
+        for j in range(imgx-2):
+                if float(img[i+1][j+1][0]) - float(img[i][j][0]) > float(6):
+                        img[i][j] = 0
+
+# Find spots of the image that are tall enough in the height map
+# Smooth out background into one gray color
+# 140 seems to be the sweet spot pixel value for tree canopy
+for i in range(imgy-1):
+        for j in range(imgx-1):
+                if gray[i][j] > 140:
+                        gray[i][j] = COLOR_BLACK
+                else:
+                        gray[i][j] = COLOR_GRAY
+
+# Generate edges and contours
+edged = cv2.Canny(gray, CANNY_THRESH_LOW, CANNY_THRESH_HIGH)
+ret, thresh = cv2.threshold(edged, 127, 255, 0)
+
+contours = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[1]
+validatedContours = []
+
+# Sanity check to remove large tree blobs or bushes
+for i in contours:
+    a = cv2.contourArea(i)
+    if AVG_TREE_AREA / 2 < a < AVG_TREE_AREA * 2:
+        validatedContours = validatedContours + [i]
 
 
-lowShadow = np.array([0,0,0])
-highShadow = np.array([180,255,5])
+i = cv2.drawContours(img,validatedContours, -1, (123,255,123), 3)
 
-#cv2.imshow("cam", img)
-
-mask = cv2.inRange(img, lowShadow, highShadow)
-mask = cv2.bitwise_not(mask)
-
-#cv2.imshow("mask", mask)
-#cv2.imshow("image", img)
-
-img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-ret, thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-
-# noise removal
-kernel = np.ones((3,3),np.uint8)
-opening = cv2.morphologyEx(thresh,cv2.MORPH_OPEN,kernel, iterations = 2)
-
-# sure background area
-sure_bg = cv2.dilate(opening,kernel,iterations=3)
-
-# Finding sure foreground area
-dist_transform = cv2.distanceTransform(opening,cv2.DIST_L2,5)
-ret, sure_fg = cv2.threshold(dist_transform,0.7*dist_transform.max(),255,0)
-
-# Finding unknown region
-sure_fg = np.uint8(sure_fg)
-unknown = cv2.subtract(sure_bg,sure_fg)
-
-# Marker labelling
-ret, markers = cv2.connectedComponents(sure_fg)
-
-# Add one to all labels so that sure background is not 0, but 1
-markers = markers+1
-
-# Now, mark the region of unknown with zero
-markers[unknown==255] = 0
-
-markers = watershed(img,markers)
-#markers = cv2.bitwise_and(markers,markers, mask=mask)
-
-mcopy = markers.copy()
-
-cv2.imwrite("./temp.png",markers)
-
-contours = cv2.findContours(markers, cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_SIMPLE)[0]
-cv2.drawContours(markers,contours, 0, (123,255,123), 3)
+canopies = {'x': [], 'y': [], 'area': [], 'height': []}
 
 # now time to get dsm and dtm bitmapas
 dsm_im = Image.open(DSM_IMG).convert('L')
@@ -103,25 +90,31 @@ dsmarray = np.array(dsm_im)
 dtm_im = Image.open(DTM_IMG).convert('L')
 dtmarray = np.array(dtm_im)
 
-canopies = {}
-canopies['x'] = []
-canopies['y'] = []
-canopies['area'] = []
-canopies['height'] = []
-
-for c in contours:
+for c in validatedContours:
     m = cv2.moments(c)
     # Center
     cx = int(m['m10'] / m['m00'])
     cy = int(m['m01'] / m['m00'])
     height = abs(findHeights(dsmarray, dtmarray, cx, cy))
-    if height < 15:
-        continue
-    canopies['x'].append(cx)
-    canopies['y'].append(cy)
-    canopies['area'].append(cv2.contourArea(c)/100)
-    canopies['height'].append(height)
+
+     # Some trees were showing up with no height
+    if img[cy][cx][0] != 0:
+        if height < 10 or height > 35:
+            continue
+        canopies['x'].append(cx)
+        canopies['y'].append(cy)
+        canopies['area'].append(cv2.contourArea(c)/100)
+        canopies['height'].append(height)
 
 
 csv = pd.DataFrame.from_dict(canopies)
 csv.to_csv(HEIGHT_CSV, index=False, float_format='%.16g')
+
+time2 = datetime.datetime.now().replace(microsecond=0)
+print("Process finished in " + str(time2-time1))
+
+if debug:
+    cv2.imshow('gray', gray)
+    cv2.imshow('edged', edged)
+    cv2.imshow('image', i)
+    cv2.waitKey(0)
