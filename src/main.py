@@ -1,12 +1,9 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from torchvision import transforms
 from torch.utils.data.dataset import Dataset  # For custom datasets
-import torchvision # for dealing with vision data
 from tqdm import trange
 import numpy as np
-from PIL import Image
 import matplotlib.pyplot as plt
 
 # credit to this git repo: https://github.com/utkuozbulak/pytorch-custom-dataset-examples
@@ -75,32 +72,34 @@ if __name__ == "__main__":
             loss.backward()
             # Update weights
             optimizer.step()
-            
-    model.eval()
-    correct = 0
-    total = 0
 
-    total_avg_error = 0
+
     x = np.linspace(0, 6000, 3000)
+    # line adjusting for normalization
     line = model.fc1.weight.data.numpy()[0][0] * (x - mean)/std + model.fc1.bias.data.numpy()[0]
     xs = []
     ys = []
+
     # test model
+                
+    model.eval()
+    total_avg_error = 0
     for i, (images, labels) in enumerate(testloader):
-        temp = 0
         labels = Variable(labels)
-        outputs = model(Variable(images))
+        images = Variable(images)
+        # calculate output based on linear line generated
+        output = model.fc1.weight.data.numpy()[0][0] * (images - mean)/std + model.fc1.bias.data.numpy()[0]
+        # scatter plot data
         xs.append(images)
         ys.append(labels)
-        predicted = outputs #torch.max(outputs.data, 1)
-        total += labels.size(0)
-        total_avg_error += abs(temp)
-        print("Height: ", labels.item(), " Predicted height: ", predicted.item())
+
+        total_avg_error += abs(output - labels)
+        print("Height: ", labels.item(), " Predicted height: ", output.item())
 
     plt.scatter(xs,ys)
     plt.plot(x,line, '-r')
     plt.savefig('./data/figures/output.png')
-    total_avg_error = total_avg_error/total
-
-    print("Average error:", round(total_avg_error,2), "feet")
+    
+    total_avg_error = total_avg_error/len(testloader)
+    print("Average error:", round(total_avg_error.item(),2), "feet")
     #print("Average percent error:", round(total_avg_error_p.item(),2), "%")

@@ -3,7 +3,6 @@ import numpy as np
 import torch
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.dataset import Dataset
-from PIL import Image
 from sklearn.preprocessing import MinMaxScaler
 
 # credit to this git repo: https://github.com/utkuozbulak/pytorch-custom-dataset-examples
