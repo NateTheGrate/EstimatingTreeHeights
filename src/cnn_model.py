@@ -2,6 +2,11 @@
 import torch.nn as nn
 import torch.nn.functional as F # Non-linearities package
 import torch
+from torch.autograd import Variable
+from torch.utils.data.dataset import Dataset  # For custom datasets
+from tqdm import trange
+import numpy as np
+import matplotlib.pyplot as plt
 
 class MnistCNNModel(nn.Module):
     def __init__(self):
@@ -30,3 +35,4 @@ class MnistCNNModel(nn.Module):
 
     def __len__(self):
         return self.data_len
+    

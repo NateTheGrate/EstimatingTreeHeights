@@ -5,22 +5,24 @@ from torch.utils.data.dataset import Dataset  # For custom datasets
 from tqdm import trange
 import numpy as np
 import matplotlib.pyplot as plt
+from os import sys
 
 # credit to this git repo: https://github.com/utkuozbulak/pytorch-custom-dataset-examples
 
 # in-repo imports
 from cnn_model import MnistCNNModel
 import csv_dataset
-
+import dataentry.image_processing as ip
 
 TRAIN_CSV = "./data/csv/canopiesFromHighestHit.csv"
 TEST_CSV = "./data/csv/canopiesFromHighestHit.csv"
+COLOR_IMAGE = './data/images/training/highest_hit.png'
 
-if __name__ == "__main__":
 
-
+# returns weight, bias, mean, std
+def train(train_csv, num_of_epochs=10000, learning_rate=0.0001):
     # Read image data from Csv 
-    train_set = csv_dataset.ImageDataset(TRAIN_CSV) 
+    train_set = csv_dataset.ImageDataset(train_csv) 
 
     # use data loader to find mean and std
     mn_dataset_loader = torch.utils.data.DataLoader(dataset=train_set,
@@ -39,23 +41,16 @@ if __name__ == "__main__":
                                                 batch_size=1,
                                                 shuffle=True)
 
-    # Read image data from Csv
-    testset = csv_dataset.ImageDataset(TEST_CSV) 
-    testloader = torch.utils.data.DataLoader(dataset=testset,
-                                                    batch_size=1,
-                                                    shuffle=False)
 
 
-    NUMBER_OF_EPOCHS = 100
-    LEARNING_RATE = 0.0001
+    # uncomment for multicore
+    #torch.set_num_threads(4)
 
-    torch.set_num_threads(4)
-    print(torch.get_num_threads())
     model = MnistCNNModel()
     model.train()
     criterion = nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
-    for i in trange(NUMBER_OF_EPOCHS, desc='Training model', unit="carrots"):
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    for i in trange(num_of_epochs, desc='Training model', unit="carrots"):
         trainloader_iter = iter(mn_dataset_loader)
         for batch_idx, (images, labels) in enumerate(trainloader_iter):
             images = Variable(images)
@@ -73,22 +68,33 @@ if __name__ == "__main__":
             # Update weights
             optimizer.step()
 
+    # returns weight, bias
+    return model.fc1.weight.data.numpy()[0][0], model.fc1.bias.data.numpy()[0], mean, std
 
+
+def evaluate(test_csv, weight, bias, mean, std):
+
+
+    # Read image data from Csv
+    testset = csv_dataset.ImageDataset(test_csv) 
+    testloader = torch.utils.data.DataLoader(dataset=testset,
+                                                    batch_size=1,
+                                                    shuffle=False)
+
+      # setup variables for testing
     x = np.linspace(0, 6000, 3000)
-    # line adjusting for normalization
-    line = model.fc1.weight.data.numpy()[0][0] * (x - mean)/std + model.fc1.bias.data.numpy()[0]
+    
+    # line model produces adjusting for normalization
+    line = weight * (x - mean)/std + bias
     xs = []
     ys = []
 
-    # test model
-                
-    model.eval()
     total_avg_error = 0
     for i, (images, labels) in enumerate(testloader):
         labels = Variable(labels)
         images = Variable(images)
         # calculate output based on linear line generated
-        output = model.fc1.weight.data.numpy()[0][0] * (images - mean)/std + model.fc1.bias.data.numpy()[0]
+        output = weight * (images - mean)/std + bias
         # scatter plot data
         xs.append(images)
         ys.append(labels)
@@ -101,5 +107,36 @@ if __name__ == "__main__":
     plt.savefig('./data/figures/output.png')
     
     total_avg_error = total_avg_error/len(testloader)
-    print("Average error:", round(total_avg_error.item(),2), "feet")
+    print("Average absolute error:", round(total_avg_error.item(),2), "feet")
     #print("Average percent error:", round(total_avg_error_p.item(),2), "%")
+
+
+def generate_csv(color_image, demo):
+    # if demo is true it will fill out a csv for testing with heights as -1
+    if demo:
+        ip.process_image(COLOR_IMAGE, TEST_CSV, demo)
+    else:
+        ip.process_image(COLOR_IMAGE, TRAIN_CSV, demo)
+
+if __name__ == "__main__":
+
+    n = len(sys.argv)
+    demo = False
+    if n > 1:
+        demo = sys.argv[1]
+    elif n > 2:
+        TRAIN_CSV = sys.argv[2]
+    elif n > 3:
+        TEST_CSV = sys.argv[3]
+    elif n > 4:
+        COLOR_IMAGE = sys.argv[4]
+    
+    print("generating csv...")
+    #generate_csv(COLOR_IMAGE, demo)
+    print("csv generated")
+
+    print("training...")
+    weight, bias, mean, std = train(TRAIN_CSV, 100)
+    evaluate(TRAIN_CSV, weight, bias, mean, std)
+
+
