@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     n = len(sys.argv)
     demo = False
-    knn = False
+    is_knn = False
     if n > 1:
         demo = sys.argv[1]
     elif n > 2:
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     elif n > 4:
         COLOR_IMAGE = sys.argv[4]
     elif n > 5:
-        knn = sys.argv[5]
+        is_knn = sys.argv[5]
     
     
     print("generating csv...")
@@ -141,10 +141,12 @@ if __name__ == "__main__":
     print("csv generated")
 
     print("training...")
-    if not knn:
-        weight, bias, mean, std = train(TRAIN_CSV, 100)
-        evaluate(TRAIN_CSV, weight, bias, mean, std)
+    if not is_knn:
+        #weight, bias, mean, std = train(TRAIN_CSV, 100)
+        #evaluate(TRAIN_CSV, weight, bias, mean, std)
+        knn.evaluate(TEST_CSV, 4)
+        
     else:
         knn.train_data = TRAIN_CSV
         knn.test_data = TEST_CSV
-        knn.cross_validation(4)
+        knn.evaluate(TEST_CSV, 4)

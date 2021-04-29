@@ -1,8 +1,10 @@
 import numpy as np
+import sys
+
 
 # get arrays from CSVs
-train_data = np.genfromtxt('./canopiesFromHighestHit.csv', delimiter=',', skip_header=1)
-test_data = np.genfromtxt('./test_pub.csv', delimiter=',', skip_header=1)
+train_data = np.genfromtxt('./data/csv/canopiesFromHighestHit.csv', delimiter=',', skip_header=1)
+#test_data = np.genfromtxt('./test_pub.csv', delimiter=',', skip_header=1)
 
 
 DTM_MIN, DTM_MAX = float(3361.916504), float(3621.498291)
@@ -25,8 +27,8 @@ def get_height(pixelValue):
 #7
 # returns k nearest neighbors of a data point not including itself
 def knn(data_point, training_set, k, test=False):
-    A = training_set[:, 3:-1]
-    z = data_point[3:-1]
+    A = training_set[:, 3:-2]
+    z = data_point[3:-2]
 
     # adjust if testing data
     #if(test):
@@ -44,12 +46,18 @@ def knn(data_point, training_set, k, test=False):
     return result
 
 
+def find_row_value(id):
+    for row in train_data:
+        if row[0] == id:
+            return row[-1]
+    return None
+
 # returns 1 if income >50k, 0 otherwise
 def count(nns, k):
     # count how many nearest neighbors have an income greater than 50k
     total = 0
     for id in nns:
-        total += train_data[int(id), -1]
+        total += find_row_value(id)
 
     return total/len(nns)
 
@@ -72,7 +80,7 @@ def cross_validation(k):
     total = 0
     for row in a:
         id = int(row[0])
-        total += abs(predict(row, training_set, k) - train_data[id, -1])
+        total += abs(predict(row, training_set, k) - find_row_value(id))
 
     results.append(get_height(total/len(a)))
 
@@ -81,7 +89,7 @@ def cross_validation(k):
     total = 0
     for row in b:
         id = int(row[0])
-        total += abs(predict(row, training_set, k) - train_data[id, -1])
+        total += abs(predict(row, training_set, k) - find_row_value(id))
 
     results.append(get_height(total/len(b)))
 
@@ -90,7 +98,7 @@ def cross_validation(k):
     total = 0
     for row in c:
         id = int(row[0])
-        total += abs(predict(row, training_set, k) - train_data[id, -1])
+        total += abs(predict(row, training_set, k) - find_row_value(id))
     results.append(get_height(total/len(c)))
 
     # test d
@@ -98,7 +106,7 @@ def cross_validation(k):
     total = 0
     for row in d:
         id = int(row[0])
-        total += abs(predict(row, training_set, k) - train_data[id, -1])
+        total += abs(predict(row, training_set, k) - find_row_value(id))
 
     results.append(get_height(total/len(d)))
 
@@ -124,11 +132,17 @@ def training_stats():
 
         # keep track of stats for every iteration
         new = [K, get_height(trn_acc), get_height(cv_accs.mean()), get_height(cv_accs.var())]
-        print(new)
+
         stats.append(new)
 
     np.savetxt("stats.csv", stats, delimiter=',', fmt='%f')
 
+def evaluate(csv, K):
+    data = np.genfromtxt(csv, delimiter=',', skip_header=1)
+    for row in data:
+        data[-1] = predict(row, train_data, K)
+    
+    np.savetxt(csv, data, delimiter=',', fmt='%f', header="index,x,y,area,pixelValue,height")
 
 
 
