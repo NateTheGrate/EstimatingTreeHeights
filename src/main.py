@@ -13,6 +13,7 @@ from os import sys
 from cnn_model import MnistCNNModel
 import csv_dataset
 import dataentry.image_processing as ip
+import knn
 
 TRAIN_CSV = "./data/csv/canopiesFromHighestHit.csv"
 TEST_CSV = "./data/csv/canopiesFromHighestHit.csv"
@@ -122,6 +123,7 @@ if __name__ == "__main__":
 
     n = len(sys.argv)
     demo = False
+    knn = False
     if n > 1:
         demo = sys.argv[1]
     elif n > 2:
@@ -130,13 +132,19 @@ if __name__ == "__main__":
         TEST_CSV = sys.argv[3]
     elif n > 4:
         COLOR_IMAGE = sys.argv[4]
+    elif n > 5:
+        knn = sys.argv[5]
+    
     
     print("generating csv...")
     #generate_csv(COLOR_IMAGE, demo)
     print("csv generated")
 
     print("training...")
-    weight, bias, mean, std = train(TRAIN_CSV, 100)
-    evaluate(TRAIN_CSV, weight, bias, mean, std)
-
-
+    if not knn:
+        weight, bias, mean, std = train(TRAIN_CSV, 100)
+        evaluate(TRAIN_CSV, weight, bias, mean, std)
+    else:
+        knn.train_data = TRAIN_CSV
+        knn.test_data = TEST_CSV
+        knn.cross_validation(4)
