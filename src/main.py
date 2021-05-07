@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
     n = len(sys.argv)
     demo = False
-    is_knn = False
+    is_knn = True
     if n > 1:
         demo = sys.argv[1]
     elif n > 2:

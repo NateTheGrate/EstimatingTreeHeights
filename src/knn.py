@@ -32,7 +32,7 @@ def knn(data_point, training_set, k, test=False):
     z = data_point[3:-2]
 
     # compute L2 distances from z to every other point in the training set
-    Y = np.linalg.norm(A - z, axis=1)
+    Y = np.linalg.norm(A - z, axis=1, ord=1)
 
     # find indicies of nearest neighbors
     result = []
@@ -123,7 +123,7 @@ def training_stats():
     stats = []
     for K in test_arr:
         # get training accuracy
-        trn_acc = training_accuracy(K)
+        _,trn_acc = training_accuracy(K)
         # get cross validation accuracies
         cv_accs = np.array(cross_validation(K))
 
@@ -143,7 +143,7 @@ def evaluate(csv, K):
     #for row in data:
       #  data[-1] = predict(row, train_data, K)
 
-    losses, accuracy = training_accuracy(16)
+    losses, accuracy = training_accuracy(4)
     print("average error in training accuracy = ", accuracy)
     return losses
 
