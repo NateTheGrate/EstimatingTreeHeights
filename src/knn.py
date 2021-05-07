@@ -7,8 +7,8 @@ train_data = np.genfromtxt('./data/csv/canopiesFromHighestHit.csv', delimiter=',
 #test_data = np.genfromtxt('./test_pub.csv', delimiter=',', skip_header=1)
 
 
-DTM_MIN, DTM_MAX = float(3361.916504), float(3621.498291)
-DSM_MIN, DSM_MAX = float(3362.287598), float(3627.270752)
+DTM_MIN, DTM_MAX = float(2664.69), float(3413.08)
+DSM_MIN, DSM_MAX = float(2665.12), float(3430.35)
 
 # dsm height is absolute surface height (tree height from sea level) (in feet)
 
@@ -24,15 +24,12 @@ def get_height(pixelValue):
     height = pixelValToDSMHeight(pixelValue) - pixelValToDTMHeight(pixelValue)
     return height
 
-#7
+
 # returns k nearest neighbors of a data point not including itself
 def knn(data_point, training_set, k, test=False):
+    
     A = training_set[:, 3:-2]
     z = data_point[3:-2]
-
-    # adjust if testing data
-    #if(test):
-        #z = data_point[1:]
 
     # compute L2 distances from z to every other point in the training set
     Y = np.linalg.norm(A - z, axis=1)
@@ -49,12 +46,12 @@ def knn(data_point, training_set, k, test=False):
 def find_row_value(id):
     for row in train_data:
         if row[0] == id:
-            return row[-1]
+            # return height
+            return row[-2]
     return None
 
-# returns 1 if income >50k, 0 otherwise
 def count(nns, k):
-    # count how many nearest neighbors have an income greater than 50k
+    # average neighbor's heights
     total = 0
     for id in nns:
         total += find_row_value(id)
@@ -69,7 +66,6 @@ def predict(data_point, training_set, k, t=False):
     return tally
 
 
-# Q8
 def cross_validation(k):
     # split array into 4 parts
     a, b, c, d = np.array_split(train_data, 4)
@@ -112,14 +108,15 @@ def cross_validation(k):
 
     return results
 
-# Q9
 # accuracy on training set when using the entire training set
 def training_accuracy(k):
     total = 0
+    losses = []
     for i in range(0, len(train_data)):
-        total += abs(predict(train_data[i], train_data, k) - train_data[i, -1])
+        losses.append(predict(train_data[i], train_data, k) - train_data[i, -2])
+        total += abs(predict(train_data[i], train_data, k) - train_data[i, -2])
 
-    return get_height(total / len(train_data))
+    return losses, get_height(total / len(train_data))
 
 def training_stats():
     test_arr = [1,2,4,8,16,32,64,128,len(train_data)]
@@ -132,17 +129,25 @@ def training_stats():
 
         # keep track of stats for every iteration
         new = [K, get_height(trn_acc), get_height(cv_accs.mean()), get_height(cv_accs.var())]
-
+        print(new)
         stats.append(new)
-
+    
     np.savetxt("stats.csv", stats, delimiter=',', fmt='%f')
 
 def evaluate(csv, K):
+    global train_data 
+    train_data = np.genfromtxt('./data/csv/canopiesFromHighestHit.csv', delimiter=',', skip_header=1)
     data = np.genfromtxt(csv, delimiter=',', skip_header=1)
-    for row in data:
-        data[-1] = predict(row, train_data, K)
     
-    np.savetxt(csv, data, delimiter=',', fmt='%f', header="index,x,y,area,pixelValue,height")
+
+    #for row in data:
+      #  data[-1] = predict(row, train_data, K)
+
+    losses, accuracy = training_accuracy(16)
+    print("average error in training accuracy = ", accuracy)
+    return losses
+
+    #np.savetxt(csv, data, delimiter=',', fmt='%f', header="index,x,y,area,pixelValue,height")
 
 
 

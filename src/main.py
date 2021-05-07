@@ -6,7 +6,7 @@ from tqdm import trange
 import numpy as np
 import matplotlib.pyplot as plt
 from os import sys
-
+import pandas as pd
 # credit to this git repo: https://github.com/utkuozbulak/pytorch-custom-dataset-examples
 
 # in-repo imports
@@ -17,7 +17,7 @@ import knn
 
 TRAIN_CSV = "./data/csv/canopiesFromHighestHit.csv"
 TEST_CSV = "./data/csv/canopiesFromHighestHit.csv"
-COLOR_IMAGE = './data/images/training/highest_hit.png'
+COLOR_IMAGE = './data/images/training/color.png'
 
 
 # returns weight, bias, mean, std
@@ -30,6 +30,7 @@ def train(train_csv, num_of_epochs=10000, learning_rate=0.0001):
                                                 batch_size=len(train_set),
                                                 num_workers=1)
 
+    # normalize data
     data = next(iter(mn_dataset_loader))
     mean = data[0].mean().item()
     std = data[0].std().item()
@@ -47,9 +48,10 @@ def train(train_csv, num_of_epochs=10000, learning_rate=0.0001):
     # uncomment for multicore
     #torch.set_num_threads(4)
 
+
     model = MnistCNNModel()
     model.train()
-    criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     for i in trange(num_of_epochs, desc='Training model', unit="carrots"):
         trainloader_iter = iter(mn_dataset_loader)
@@ -74,7 +76,7 @@ def train(train_csv, num_of_epochs=10000, learning_rate=0.0001):
 
 
 def evaluate(test_csv, weight, bias, mean, std):
-
+    df = pd.read_csv(test_csv)
 
     # Read image data from Csv
     testset = csv_dataset.ImageDataset(test_csv) 
@@ -89,8 +91,8 @@ def evaluate(test_csv, weight, bias, mean, std):
     line = weight * (x - mean)/std + bias
     xs = []
     ys = []
-
     total_avg_error = 0
+    losses = []
     for i, (images, labels) in enumerate(testloader):
         labels = Variable(labels)
         images = Variable(images)
@@ -99,7 +101,7 @@ def evaluate(test_csv, weight, bias, mean, std):
         # scatter plot data
         xs.append(images)
         ys.append(labels)
-
+        losses.append(round(output.item() - labels.item(), 2))
         total_avg_error += abs(output - labels)
         print("Height: ", labels.item(), " Predicted height: ", output.item())
 
@@ -109,6 +111,8 @@ def evaluate(test_csv, weight, bias, mean, std):
     
     total_avg_error = total_avg_error/len(testloader)
     print("Average absolute error:", round(total_avg_error.item(),2), "feet")
+    df['losses'] = losses
+    ip.add_height_markers_df(COLOR_IMAGE, df)
     #print("Average percent error:", round(total_avg_error_p.item(),2), "%")
 
 
@@ -118,6 +122,7 @@ def generate_csv(color_image, demo):
         ip.process_image(COLOR_IMAGE, TEST_CSV, demo)
     else:
         ip.process_image(COLOR_IMAGE, TRAIN_CSV, demo)
+
 
 if __name__ == "__main__":
 
@@ -142,11 +147,17 @@ if __name__ == "__main__":
 
     print("training...")
     if not is_knn:
-        #weight, bias, mean, std = train(TRAIN_CSV, 100)
-        #evaluate(TRAIN_CSV, weight, bias, mean, std)
-        knn.evaluate(TEST_CSV, 4)
+        weight, bias, mean, std = train(TRAIN_CSV, 100)
+        evaluate(TRAIN_CSV, weight, bias, mean, std)
+        
         
     else:
         knn.train_data = TRAIN_CSV
         knn.test_data = TEST_CSV
-        knn.evaluate(TEST_CSV, 4)
+        losses = knn.evaluate(TEST_CSV, 4)
+
+        df = pd.read_csv(TRAIN_CSV)
+        df['losses'] = losses
+
+        ip.add_height_markers_df(COLOR_IMAGE, df)
+

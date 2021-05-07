@@ -17,16 +17,64 @@ PIL.Image.MAX_IMAGE_PIXELS = 152463601
 
 # dsm height is absolute surface height (tree height from sea level) (in feet)
 def pixelValToDSMHeight(pixelValue):
-    return pixelValue + ((DSM_MAX - DSM_MIN) / 255.0) + DSM_MIN
+    return pixelValue * ((DSM_MAX - DSM_MIN) / 255.0) + DSM_MIN
 
 # dtm height is absolute ground height (in feet)
 def pixelValToDTMHeight(pixelValue):
-    return pixelValue + ((DTM_MAX - DTM_MIN) / 255.0) + DTM_MIN
+    return pixelValue * ((DTM_MAX - DTM_MIN) / 255.0) + DTM_MIN
 
 # at (x,y), subtract dsm from dtm (tree height from ground height)
 def findHeights(dsm, dtm, x, y):
     height =  pixelValToDSMHeight(dsm[y][x]) - pixelValToDTMHeight(dtm[y][x])
     return height
+
+def add_height_markers(image_path, csv):
+    
+    img = cv2.imread(image_path)
+    data = pd.read_csv(csv)
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fontScale = 1
+    fontColor = (0,0,255)
+    lineType = 2
+
+    for i in range(0, data.shape[0]):
+        # get coords from csv (first 2 columns)
+        x,y = np.asarray(data.iloc[i,1:3])
+        x = int(x)
+        y = int(y)
+        height = data.loc[i,'height']
+        img = cv2.putText(img, str(height), (x,y), font, fontScale, fontColor, lineType)
+    
+
+    #Save image
+    cv2.imwrite("./data/figures/labeled_trees.png", img)
+
+
+
+def add_height_markers_df(image_path, df):
+    
+    img = cv2.imread(image_path)
+    data = df
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fontScale = 1
+    fontColor = (0,0,255)
+    lineType = 2
+
+    for i in range(0, data.shape[0]):
+        # get coords from csv (first 2 columns)
+        x,y = np.asarray(data.iloc[i,1:3])
+        x = int(x)
+        y = int(y)
+        losses = data.loc[i,'losses']
+        img = cv2.putText(img, str(losses), (x,y), font, fontScale, fontColor, lineType)
+    
+
+    #Save image
+    cv2.imwrite("./data/figures/labeled_trees.png", img)
+
+
 
 def process_image(image_path, csv_path, new_data):
     img = cv2.imread(image_path)
