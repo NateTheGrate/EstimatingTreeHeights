@@ -26,7 +26,7 @@ First, you have to make a folder called 'images' in data (the path should look l
 
 Then,you have to have a RGB color image of the area as well as a digital surface map (DSM) and digit terrain map (DTM) of the same area. Put those in data/images
 
-Note: it is important that you name the DTM 'bare_earth.png' and DSM 'highest_hit.png' as well as changinge the min and max values of each in /src/dataentry/image_processing.py under DSM_MIN DSM_MAX DTM_MIN DTM_MAX
+Note: it is important that you name the DTM 'bare_earth.png' and DSM 'highest_hit.png' as well as changinge the min and max values of each in /src/dataentry/image_processing.py under DSM_MIN DSM_MAX DTM_MIN DTM_MAX to what the pixel values represent in feet according to your data.
 
 ## Operating the program
 There are several command line arguments you are going to want to use if you want the full functionality of the program. The order of which matters here.
