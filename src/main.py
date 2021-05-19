@@ -16,10 +16,11 @@ import dataentry.image_processing as ip
 import knn
 
 TRAIN_CSV = "./data/csv/canopiesFromHighestHit.csv"
-TEST_CSV = "./data/csv/canopiesFromHighestHit.csv"
+TEST_CSV = "./data/csv/canopiesFromColor.csv"
 COLOR_IMAGE = './data/images/color.png'
+HIGHEST_HIT_IMAGE = './data/images/highest_hit.png'
 
-
+# train nn on training set
 # returns weight, bias, mean, std
 def train(train_csv, num_of_epochs=10000, learning_rate=0.0001):
     # Read image data from Csv 
@@ -76,7 +77,7 @@ def train(train_csv, num_of_epochs=10000, learning_rate=0.0001):
 
 
 
-# 
+# nn code for generating heights from test data
 def evaluate(test_csv, weight, bias, mean, std):
     df = pd.read_csv(test_csv)
 
@@ -104,7 +105,7 @@ def evaluate(test_csv, weight, bias, mean, std):
     ip.add_height_markers_df(COLOR_IMAGE, df)
 
 
-
+# nn code for evalating performance on training set
 def evaluate_training(train_csv, weight, bias, mean, std):
 
     df = pd.read_csv(train_csv)
@@ -150,34 +151,41 @@ def evaluate_training(train_csv, weight, bias, mean, std):
     ip.add_height_markers_df(COLOR_IMAGE, df)
 
 
-
-def generate_csv(color_image, demo):
+# generate and save csv from color image
+# outputs csv that has canopy sizes and coordinates
+def generate_csv(image_path, demo):
     # if demo is true it will fill out a csv for testing with heights as -1
     if demo:
-        ip.process_image(COLOR_IMAGE, TEST_CSV, demo)
+        ip.process_color_image(image_path, TEST_CSV)
     else:
-        ip.process_image(COLOR_IMAGE, TRAIN_CSV, demo)
+        ip.process_image_highest_hit(image_path, TRAIN_CSV)
 
 
 if __name__ == "__main__":
 
+    # command line arguements
     n = len(sys.argv)
-    demo = False
+    demo = True
     is_knn = False
     if n > 1:
         demo = sys.argv[1]
     elif n > 2:
-        TRAIN_CSV = sys.argv[2]
+        is_knn = sys.argv[2]
     elif n > 3:
-        TEST_CSV = sys.argv[3]
+        TRAIN_CSV = sys.argv[3]
     elif n > 4:
-        COLOR_IMAGE = sys.argv[4]
+        TEST_CSV = sys.argv[4]
     elif n > 5:
-        is_knn = sys.argv[5]
-    
-    
+        COLOR_IMAGE = sys.argv[5]
+    elif n > 6:
+        HIGHEST_HIT_IMAGE = sys.argv[6]
+
+     
     print("generating csv...")
-    #generate_csv(COLOR_IMAGE, demo)
+    if(demo):
+        generate_csv(COLOR_IMAGE, demo)
+    else:
+        generate_csv(HIGHEST_HIT_IMAGE, demo)
     print("csv generated")
 
     print("training...")
@@ -186,7 +194,8 @@ if __name__ == "__main__":
     if not is_knn and demo:
         weight, bias, mean, std = train(TRAIN_CSV, 100)
         evaluate_training(TRAIN_CSV, weight, bias, mean, std)
-    # 
+    
+    # generate heights for nn test data
     elif not is_knn and not demo:
         weight, bias, mean, std = train(TRAIN_CSV, 100)
         evaluate(TEST_CSV, weight, bias, mean, std)

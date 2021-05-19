@@ -1,6 +1,8 @@
 from cv2 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.colors import rgb_to_hsv
+from skimage.segmentation import watershed
 import pandas as pd
 import datetime
 from PIL import Image
@@ -82,8 +84,96 @@ def add_height_markers_df(image_path, df, use_losses=False):
     cv2.imwrite("./data/figures/labeled_trees.png", img)
 
 
+def process_color_image (image_path, csv_path):
+    ########################################################################################################################
+    # Read image
+    ########################################################################################################################
+    img = cv2.imread(image_path)
+    og = img.copy()
+    color = cv2.cvtColor(og,cv2.COLOR_BGR2RGB)
 
-def process_image(image_path, csv_path, new_data):
+    ########################################################################################################################
+    # Masking / Preprocessing
+    ########################################################################################################################
+    lowShadow = np.array([0,0,0])
+    highShadow = np.array([180,255,5])
+
+    mask = cv2.inRange(img, lowShadow, highShadow)
+    mask=cv2.bitwise_not(mask)
+
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+
+    ########################################################################################################################
+    # Watershed algorithm for image segmentation
+    ########################################################################################################################
+
+    # noise removal
+    kernel = np.ones((3,3),np.uint8)
+    opening = cv2.morphologyEx(thresh,cv2.MORPH_OPEN,kernel, iterations = 2)
+
+    # sure background area
+    sure_bg = cv2.dilate(opening,kernel,iterations=3)
+
+    # Finding sure foreground area
+    dist_transform = cv2.distanceTransform(opening,cv2.DIST_L2,0)
+    ret, sure_fg = cv2.threshold(dist_transform,0.7*dist_transform.max(),255,0)
+
+    # Finding unknown region
+    sure_fg = np.uint8(sure_fg)
+    unknown = cv2.subtract(sure_bg,sure_fg)
+
+    # Marker labelling
+    ret, markers = cv2.connectedComponents(sure_fg)
+
+    # Add one to all labels so that sure background is not 0, but 1
+    markers = markers+1
+
+    # Now, mark the region of unknown with zero
+    markers[unknown==255] = 0
+
+    markers = watershed(img,markers)
+    #markers = cv2.bitwise_and(markers,markers, mask=mask)
+
+    mcopy = markers.copy()
+
+    cv2.imwrite("./data/figures/circled_trees.png",markers)
+
+    ########################################################################################################################
+    # Contour generation and position/size data extraction
+    ########################################################################################################################
+
+    contours = cv2.findContours(markers, cv2.RETR_FLOODFILL, cv2.CHAIN_APPROX_SIMPLE)[1]
+    cv2.drawContours(markers,contours, -1, (123,255,123), 3)
+
+    canopies = {}
+    canopies['x'] = []
+    canopies['y'] = []
+    canopies['area'] = []
+
+    for c in contours:
+        m = cv2.moments(c)
+        # Center
+        cx = int(m['m10'] / m['m00'])
+        cy = int(m['m01'] / m['m00'])
+
+        canopies['x'].append(cx)
+        canopies['y'].append(cy)
+        canopies['area'].append(cv2.contourArea(c))
+
+    #Generate csv file
+    csv = pd.DataFrame.from_dict(canopies)
+    csv.to_csv('./data/csv/canopiesFromColorImage')
+
+
+    fig, axs = plt.subplots (2,2)
+    axs[0,0].imshow(color)
+    axs[0,1].imshow(og)
+    axs[1,0].imshow(mcopy)
+    axs[1,1].imshow(markers)
+    plt.show()
+
+def process_image_highest_hit(image_path, csv_path):
     img = cv2.imread(image_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -95,7 +185,7 @@ def process_image(image_path, csv_path, new_data):
     # Display in-process images
     debug = True
     # Average tree areas in pixels, the program checks that all contours are not too far away from this
-    AVG_TREE_AREA = 2500
+    AVG_TREE_AREA = 2000
     # Grayscale colors used to display different parts of the image during processing
     COLOR_BLACK = 1
     COLOR_GRAY = 200
@@ -115,7 +205,7 @@ def process_image(image_path, csv_path, new_data):
     # 140 seems to be the sweet spot pixel value for tree canopy
     for i in range(imgy-1):
             for j in range(imgx-1):
-                    if gray[i][j] > 140:
+                    if gray[i][j] > 143:
                             gray[i][j] = COLOR_BLACK
                     else:
                             gray[i][j] = COLOR_GRAY
@@ -127,10 +217,12 @@ def process_image(image_path, csv_path, new_data):
     contours = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[1]
     validatedContours = []
 
+
     # Sanity check to remove large tree blobs or bushes
     for i in contours:
         a = cv2.contourArea(i)
-        if AVG_TREE_AREA / 2 < a < AVG_TREE_AREA * 2:
+        print(a)
+        if AVG_TREE_AREA / 3 < a < AVG_TREE_AREA * 3:
             validatedContours = validatedContours + [i]
 
 
