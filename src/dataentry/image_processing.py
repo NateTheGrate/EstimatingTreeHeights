@@ -10,8 +10,8 @@ import PIL
 DTM_MIN, DTM_MAX = float(3361.916504), float(3621.498291)
 DSM_MIN, DSM_MAX = float(3362.287598), float(3627.270752)
 
-DSM_IMG = './data/images/training/highest_hit.png'
-DTM_IMG = './data/images/training/bare_earth.png'
+DSM_IMG = './data/images/highest_hit.png'
+DTM_IMG = './data/images/bare_earth.png'
 
 PIL.Image.MAX_IMAGE_PIXELS = 152463601
 
@@ -46,14 +46,19 @@ def add_height_markers(image_path, csv):
         height = data.loc[i,'height']
         img = cv2.putText(img, str(height), (x,y), font, fontScale, fontColor, lineType)
     
-
+    print(img)
     #Save image
-    cv2.imwrite("./data/figures/labeled_trees.png", img)
+    #cv2.imwrite("./data/figures/labeled_trees.png", img)
 
 
 
-def add_height_markers_df(image_path, df):
+def add_height_markers_df(image_path, df, use_losses=False):
     
+    #figure out if the output column is named losses or height
+    csv_column_name = 'height'
+    if(use_losses):
+        csv_column_name = 'losses'
+
     img = cv2.imread(image_path)
     data = df
 
@@ -67,10 +72,12 @@ def add_height_markers_df(image_path, df):
         x,y = np.asarray(data.iloc[i,1:3])
         x = int(x)
         y = int(y)
-        losses = data.loc[i,'losses']
-        img = cv2.putText(img, str(losses), (x,y), font, fontScale, fontColor, lineType)
+        # get height or loss
+        column_to_display = data.loc[i,csv_column_name]
+        # display on image
+        img = cv2.putText(img, str(round(column_to_display, 1)), (x,y), font, fontScale, fontColor, lineType)
     
-
+    
     #Save image
     cv2.imwrite("./data/figures/labeled_trees.png", img)
 

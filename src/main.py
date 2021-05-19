@@ -17,7 +17,7 @@ import knn
 
 TRAIN_CSV = "./data/csv/canopiesFromHighestHit.csv"
 TEST_CSV = "./data/csv/canopiesFromHighestHit.csv"
-COLOR_IMAGE = './data/images/training/color.png'
+COLOR_IMAGE = './data/images/color.png'
 
 
 # returns weight, bias, mean, std
@@ -110,6 +110,8 @@ def evaluate(test_csv, weight, bias, mean, std):
     plt.savefig('./data/figures/output.png')
     
     total_avg_error = total_avg_error/len(testloader)
+    print("training stats on nueral network")
+    print("------------------------------------")
     print("Average absolute error:", round(total_avg_error.item(),2), "feet")
     df['losses'] = losses
     ip.add_height_markers_df(COLOR_IMAGE, df)
@@ -128,7 +130,7 @@ if __name__ == "__main__":
 
     n = len(sys.argv)
     demo = False
-    is_knn = True
+    is_knn = False
     if n > 1:
         demo = sys.argv[1]
     elif n > 2:
@@ -151,13 +153,28 @@ if __name__ == "__main__":
         evaluate(TRAIN_CSV, weight, bias, mean, std)
         
         
-    else:
-        knn.train_data = TRAIN_CSV
-        knn.test_data = TEST_CSV
-        losses = knn.evaluate(TEST_CSV, 4)
+    elif is_knn and demo:
+ 
+        heights = knn.evaluate(TRAIN_CSV, TEST_CSV, 4)
 
         df = pd.read_csv(TRAIN_CSV)
-        df['losses'] = losses
+        df['height'] = heights
+        
+        df.to_csv(TEST_CSV, index=False, float_format='%.16g')
 
         ip.add_height_markers_df(COLOR_IMAGE, df)
 
+    else:
+        knn.train_data = TRAIN_CSV
+
+        losses, training_acc, cross_val_stats = knn.training_stats(TRAIN_CSV, 8)
+
+        df = pd.read_csv(TRAIN_CSV)
+        df['losses'] = losses
+        ip.add_height_markers_df(COLOR_IMAGE, df, use_losses=True)
+        print("\ntraining stats on knn")
+        print("----------------------------------")
+        print("Using the average of the 8 nearest neighbors")
+        print("Average error using whole training set against itself: \t" + str(training_acc))
+        print("Mean error on 4-fold cross validation: \t\t\t" + str(cross_val_stats.mean()))
+        print("Variance error on 4-fold cross validation: \t\t" + str(cross_val_stats.var()))

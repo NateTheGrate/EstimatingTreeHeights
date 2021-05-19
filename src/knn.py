@@ -118,36 +118,30 @@ def training_accuracy(k):
 
     return losses, get_height(total / len(train_data))
 
-def training_stats():
-    test_arr = [1,2,4,8,16,32,64,128,len(train_data)]
-    stats = []
-    for K in test_arr:
-        # get training accuracy
-        _,trn_acc = training_accuracy(K)
-        # get cross validation accuracies
-        cv_accs = np.array(cross_validation(K))
+def training_stats(train_csv, K):
 
-        # keep track of stats for every iteration
-        new = [K, get_height(trn_acc), get_height(cv_accs.mean()), get_height(cv_accs.var())]
-        print(new)
-        stats.append(new)
-    
-    np.savetxt("stats.csv", stats, delimiter=',', fmt='%f')
-
-def evaluate(csv, K):
     global train_data 
-    train_data = np.genfromtxt('./data/csv/canopiesFromHighestHit.csv', delimiter=',', skip_header=1)
-    data = np.genfromtxt(csv, delimiter=',', skip_header=1)
+    train_data = np.genfromtxt(train_csv, delimiter=',', skip_header=1)
+
+    # get training accuracy
+    losses,trn_acc = training_accuracy(K)
+    # get cross validation accuracies
+    cv_accs = np.array(cross_validation(K))
+
+    return losses, trn_acc, cv_accs
+
+
+
+def evaluate(traincsv, testcsv, K):
+    global train_data 
+    train_data = np.genfromtxt(traincsv, delimiter=',', skip_header=1)
+    test_data = np.genfromtxt(testcsv, delimiter=',', skip_header=1)
     
+    heights = []
+    for row in test_data:
+        heights.append(get_height(predict(row, train_data, K)))
 
-    #for row in data:
-      #  data[-1] = predict(row, train_data, K)
-
-    losses, accuracy = training_accuracy(4)
-    print("average error in training accuracy = ", accuracy)
-    return losses
-
-    #np.savetxt(csv, data, delimiter=',', fmt='%f', header="index,x,y,area,pixelValue,height")
+    return heights
 
 
 
