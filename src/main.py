@@ -165,44 +165,44 @@ if __name__ == "__main__":
 
     # command line arguements
     n = len(sys.argv)
-    demo = True
+    print(n)
+    demo = False
     is_knn = False
     if n > 1:
-        demo = sys.argv[1]
-    elif n > 2:
-        is_knn = sys.argv[2]
-    elif n > 3:
-        TRAIN_CSV = sys.argv[3]
-    elif n > 4:
-        TEST_CSV = sys.argv[4]
-    elif n > 5:
-        COLOR_IMAGE = sys.argv[5]
-    elif n > 6:
-        HIGHEST_HIT_IMAGE = sys.argv[6]
+        demo = sys.argv[1]=='True'
+    if n > 2:
+        is_knn = sys.argv[2]=='True'
+    if n > 3:
+        COLOR_IMAGE = sys.argv[3]
+    if n > 4:
+        TRAIN_CSV = sys.argv[4]
+    if n > 5:
+        TEST_CSV = sys.argv[5]
 
-     
+
     print("generating csv...")
-    if(demo):
-        generate_csv(COLOR_IMAGE, demo)
-    else:
-        generate_csv(HIGHEST_HIT_IMAGE, demo)
+    #if(demo):
+    #    generate_csv(COLOR_IMAGE, demo)
+    #else:
+    #    generate_csv(HIGHEST_HIT_IMAGE, demo)
     print("csv generated")
-
     print("training...")
-    
     # evaluate nueral net training set
     if not is_knn and demo:
         weight, bias, mean, std = train(TRAIN_CSV, 100)
         evaluate_training(TRAIN_CSV, weight, bias, mean, std)
+        print("Saved heights to test csv and labelled color image with heights and put it in ./data/figures/labeled_trees.png")
+
     
     # generate heights for nn test data
     elif not is_knn and not demo:
         weight, bias, mean, std = train(TRAIN_CSV, 100)
         evaluate(TEST_CSV, weight, bias, mean, std)
+        print("Labeled color image with absolute error of each tree in ./data/figures/labeled_trees.png")
+
 
     # actually use test data on knn
     elif is_knn and demo:
- 
         heights = knn.evaluate(TRAIN_CSV, TEST_CSV, 4)
 
         df = pd.read_csv(TRAIN_CSV)
@@ -211,19 +211,21 @@ if __name__ == "__main__":
         df.to_csv(TEST_CSV, index=False, float_format='%.16g')
 
         ip.add_height_markers_df(COLOR_IMAGE, df)
+        print("Saved heights to test csv and labelled color image with heights and put it in ./data/figures/labeled_trees.png")
 
     # evaluate training stats on knn
     else:
-        knn.train_data = TRAIN_CSV
-
         losses, training_acc, cross_val_stats = knn.training_stats(TRAIN_CSV, 8)
 
         df = pd.read_csv(TRAIN_CSV)
         df['losses'] = losses
         ip.add_height_markers_df(COLOR_IMAGE, df, use_losses=True)
-        print("\ntraining stats on knn")
+        print("\ntraining stats on knn (using feet)")
         print("----------------------------------")
         print("Using the average of the 8 nearest neighbors")
         print("Average error using whole training set against itself: \t" + str(training_acc))
         print("Mean error on 4-fold cross validation: \t\t\t" + str(cross_val_stats.mean()))
         print("Variance error on 4-fold cross validation: \t\t" + str(cross_val_stats.var()))
+        print("----------------------------------")
+
+        print("Labeled color image with absolute error of each tree in ./data/figures/labeled_trees.png")

@@ -3,6 +3,8 @@ import numpy as np
 from PIL import Image
 import PIL
 
+#DEPRECIATED CODE
+
 DTM_MIN, DTM_MAX = float(2664.69), float(3413.08)
 DSM_MIN, DSM_MAX = float(2665.12), float(3430.35)
 
