@@ -66,6 +66,8 @@ def predict(data_point, training_set, k, t=False):
     return tally
 
 
+# 4-fold cross validation
+# returns array size 4 of absolute error for each fold
 def cross_validation(k):
     # split array into 4 parts
     a, b, c, d = np.array_split(train_data, 4)
@@ -108,16 +110,22 @@ def cross_validation(k):
 
     return results
 
-# accuracy on training set when using the entire training set
+# accuracy on the whole training set against itself
+# returns the losses for each entry in the training set in order and the absolute error
 def training_accuracy(k):
+
     total = 0
     losses = []
+    # record absolute error across the whole training set
     for i in range(0, len(train_data)):
         losses.append(predict(train_data[i], train_data, k) - train_data[i, -2])
         total += abs(predict(train_data[i], train_data, k) - train_data[i, -2])
 
     return losses, get_height(total / len(train_data))
 
+
+# wrapper function for training accuracy and cross validation
+# returns abolute error losses, training accuracy, and crossvalidation accuracies
 def training_stats(train_csv, K):
 
     global train_data 
@@ -132,6 +140,7 @@ def training_stats(train_csv, K):
 
 
 
+# returns heights for each entry in the test data in order
 def evaluate(traincsv, testcsv, K):
     global train_data 
     train_data = np.genfromtxt(traincsv, delimiter=',', skip_header=1)
