@@ -13,6 +13,7 @@ Documentation is in Wiki.
 
 # How to get running
 
+## Project setup
 First you are going to want to install pytorch separately from either the pytorch website: pytorch.org and go to install directions to find the right installation for your machine, or if you're using linux you can use this command: 
 
 `pip3 install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html`
@@ -27,5 +28,27 @@ First, you have to make a folder called 'images' in data (the path should look l
 
 Then,you have to have a RGB color image of the area as well as a digital surface map (DSM) and digit terrain map (DTM) of the same area. Put those in data/images
 
+Note: it is important that you name the DTM 'bare_earth.png' and DSM 'highest_hit.png' as well as changinge the min and max values of each in /src/dataentry/image_processing.py under DSM_MIN DSM_MAX DTM_MIN DTM_MAX
 
+## Operating the program
+There are several command line arguments you are going to want to use if you want the full functionality of the program. The order of which matters here.
+
+First is the demo option: setting to True will evaluate a test set and give you heights for each tree found. Setting to False will evaluate training performance on the training set. This is False by default.
+
+Second is the is_knn option: setting to True will use k-nearest-neighbors algorithm. setting to False will use the nueral net. This is False by default.
+
+Third is the path of the rgb image. default is COLOR_IMAGE = './data/images/color.png'
+
+Fourth is the path of the training csv (it will create a new one if it does not exist). default is TRAIN_CSV = "./data/csv/canopiesFromHighestHit.csv"
+
+Fifth is the path of the test csv (it will create a new one if it does not exist). default is TEST_CSV = "./data/csv/canopiesFromColor.csv"
+
+
+Let's assume you want to use all the default paths, so that the first two are all you need to worry about.
+
+For example, if you wanted to evaulate test data on the nueral net using default paths you would use: `python ./src/main.py True False`
+
+If you wanted to evaluate training performance on the knn, you would use: `python ./src/main.py False True`
+
+Note: The image outputed in ./data/figures will be labelled with errors--not heights--when you set demo=False (when you evaluate training). It will be labelled with heights when you set demo=True
 
