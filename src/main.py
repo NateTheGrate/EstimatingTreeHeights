@@ -16,7 +16,7 @@ import dataentry.image_processing as ip
 import knn
 
 TRAIN_CSV = "./data/csv/canopiesFromHighestHit.csv"
-TEST_CSV = "./data/csv/canopiesFromColor.csv"
+TEST_CSV = "./data/csv/canopiesFromHighestHit.csv"
 COLOR_IMAGE = './data/images/color.png'
 HIGHEST_HIT_IMAGE = './data/images/highest_hit.png'
 
@@ -87,8 +87,6 @@ def evaluate(test_csv, weight, bias, mean, std):
                                                     batch_size=1,
                                                     shuffle=False)
 
-    # line model produces adjusting for normalization
-    line = weight * (x - mean)/std + bias
     total_avg_error = 0
     heights = []
     for i, (images, labels) in enumerate(testloader):
@@ -190,14 +188,14 @@ if __name__ == "__main__":
     # evaluate nueral net training set
     if not is_knn and demo:
         weight, bias, mean, std = train(TRAIN_CSV, 100)
-        evaluate_training(TRAIN_CSV, weight, bias, mean, std)
+        evaluate(TEST_CSV, weight, bias, mean, std)
         print("Saved heights to test csv and labelled color image with heights and put it in ./data/figures/labeled_trees.png")
 
     
     # generate heights for nn test data
     elif not is_knn and not demo:
         weight, bias, mean, std = train(TRAIN_CSV, 100)
-        evaluate(TEST_CSV, weight, bias, mean, std)
+        evaluate_training(TRAIN_CSV, weight, bias, mean, std)
         print("Labeled color image with absolute error of each tree in ./data/figures/labeled_trees.png")
 
 
