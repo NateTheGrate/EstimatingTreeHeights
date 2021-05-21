@@ -150,6 +150,7 @@ def process_color_image (image_path, csv_path):
     canopies['x'] = []
     canopies['y'] = []
     canopies['area'] = []
+    canopies['height'] = []
 
     for c in contours:
         m = cv2.moments(c)
