@@ -16,7 +16,7 @@ import dataentry.image_processing as ip
 import knn
 
 TRAIN_CSV = "./data/csv/canopiesFromHighestHit.csv"
-TEST_CSV = "./data/csv/canopiesFromColor.csv"
+TEST_CSV = "./data/csv/canopiesFromHighestHit.csv"
 COLOR_IMAGE = './data/images/color.png'
 HIGHEST_HIT_IMAGE = './data/images/highest_hit.png'
 
